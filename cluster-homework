@@ -1,0 +1,172 @@
+
+作业
+01--------------------------------------------
+
+1 集群有哪些类别？
+
+参考答案
+
+    高性能计算集群HPC：通过以集群开发的并行应用程序，解决复杂的科学问题。
+    负载均衡（LB）集群：客户端访问负载可以在计算机集群中尽可能平均地分摊处理。
+    高可用（HA）集群：当集群中的一个系统发生故障时，集群软件迅速做出反应，将该系统的任务分配到集群中其它正在工作的系统上执行。
+
+2 LVS的负载平衡方式有哪些？
+
+参考答案
+
+    VS/NAT：通过网络地址转换实现的虚拟服务器。Director将用户请求报文的目的地址改成选定的Real Server地址后，转发给Real Server。大并发访问时，调度器的性能成为瓶颈。
+    VS/DR：直接使用路由技术实现虚拟服务器。通过改写请求报文的MAC地址，将请求发至Real Server，Real Server直接响应客户端。
+    VS/TUN：通过隧道方式实现虚拟服务器。Director采用隧道技术将请求发至Real Server后，Real Server直接响应客户端。
+
+3 写出至少四种LVS负载平衡的调度算法
+
+参考答案
+
+    轮询（Round Robin）
+    加权轮询（Weighted Round Robin）
+    最少连接（Least Connections）
+    加权最少连接（ Weighted Least Connections ）
+    基于局部性的最少链接（Locality-Based Least Connections）
+    带复制的基于局部性最少链接（Locality-Based Least Connections with Replication）
+    目标地址散列（Destination Hashing）
+    源地址散列（Source Hashing）
+    最短的期望的延迟（Shortest Expected Delay Scheduling SED）
+    最少队列调度（Never Queue Scheduling NQ）
+
+4 解释下面LVS配置的作用？
+
+    [root@svr1 ~]# ipvsadm -A -t 10.10.10.1:80 -s wrr
+    [root@svr1 ~]# ipvsadm -a -t 10.10.10.1:80 -r 192.168.10.11 -m -w 1
+
+参考答案
+
+1）创建虚拟服务器，VIP为10.10.10.1，采用的调度算法为wrr。
+
+2）向虚拟服务器中加入节点，并指定权重为1，负载均衡方式为VS/NAT。
+
+
+02-------------------------------------------------------------------------------------
+
+1 HAProxy工作模式有哪些？
+
+参考答案
+
+    mode http：客户端请求被深度分析后再发往服务器。
+    mode tcp：在客户端与服务器这间建立全双工会话，不检查第七层信息。
+    mode health：仅做健康状态检查，已经不建议使用。
+
+2 HAProxy配置文件有哪些组成部分？
+
+参考答案
+
+    default：为后续的其他部分设置缺省参数，缺省参数可以被后续部分重置；
+    listen：调度服务器监听的IP和端口。
+    server：定义后端真实服务器的IP和端口，健康检查的策略。
+
+3 简单描述keepalived配置文件字段含义
+
+以下是部分keepalived配置文件的声明，在下面代码的括号处写出关键字段含义：
+
+    vrrp_instance VI_1 {
+      state MASTER                         //（     ）
+      interface eth0
+      virtual_router_id 51
+      priority 100                         //（     ）
+      advert_int 1
+      authentication {
+        auth_type pass
+        auth_pass forlvs                   //（     ）
+      }
+
+参考答案
+
+建立测试文件：
+
+1）state MASTER：设置主服务器MASTER，辅助为SLAVE；
+
+2）priority 100：设置优先级，主服务器优先级要比辅助的高；
+
+3）auth_pass forlvs：设置密码，主辅服务器密码必须一致。
+4 使用Keepalived实现LVS功能？
+
+要求：虚拟服务器IP地址为192.168.1.1，采用的LVS调度算法为RR，LVS的模式为DR，Real Server的IP地址分别为192.168.1.10和192.168.1.11。只需写出虚拟服务器部分的配置文件。
+
+参考答案
+
+    virtual_server 192.168.1.1 80 {           //设置虚拟IP为192.168.1.1
+      delay_loop 6
+      lb_algo rr                              //设置LVS调度算法为RR
+      lb_kind DR                           //设置LVS的模式为DR
+      persistence_timeout 50
+      protocol TCP
+      real_server 192.168.1.10 80 {//设置Real Server192.168.1.10
+        weight 3                             //设置权重为3
+        TCP_CHECK {
+    connect_timeout 3
+    nb_get_retry 3
+    delay_before_retry 3
+        }
+      }
+     real_server 192.168.1.11 80 {         //设置Real Server192.168.1.10
+        weight 1   
+        TCP_CHECK {
+    connect_timeout 3
+    nb_get_retry 3
+    delay_before_retry 3
+        }
+     }
+}
+
+03------------------------------------------------------------
+
+
+1 写出Ceph核心组件？
+
+参考答案
+
+    OSDs：存储设备
+    Monitors：集群监控组件
+    MDSs：存放文件系统的元数据（对象存储和块存储不需要该组件）
+    Client：ceph客户端
+
+2 使用什么工具可以快速部署Ceph集群存储？
+
+参考答案
+
+ceph-deploy。
+3 KVM可以通过什么访问Ceph块存储设备？
+
+参考答案
+
+librbd。
+
+
+04-----------------------------------------------------------------
+
+1 使用什么命令可以修改虚拟机的XML配置文件？
+
+参考答案
+
+    virsh edit
+
+2 什么是CephFS？
+
+参考答案
+
+分布式文件系统（Distributed File System）是指文件系统管理的物理存储资源不一定直接连接在本地节点上，而是通过计算机网络与节点相连；
+
+CephFS使用Ceph集群提供与POSIX兼容的文件系统；
+
+允许Linux直接将Ceph存储mount到本地。
+3 什么是存储设备的元数据？
+
+参考答案
+
+任何文件系统中的数据分为数据和元数据；
+
+数据是指普通文件中的实际数据；
+
+而元数据指用来描述一个文件的特征的系统数据；
+
+比如：访问权限、文件拥有者以及文件数据块的分布信息(inode...)等。
+
